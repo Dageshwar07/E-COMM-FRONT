@@ -149,9 +149,11 @@ const HomePage = () => {
             </button>
           </div>
         </div>
-        <div className="col-md-9 ">
+        <div className="col-md-9">
           <h1 className="text-center">All Products</h1>
           <div className="d-flex flex-wrap">
+
+
             {products?.map((p) => (
               <div className="card m-2" key={p._id}>
                 <img
@@ -179,6 +181,9 @@ const HomePage = () => {
                     >
                       More Details
                     </button>
+
+
+
                     <button
                       className="btn btn-outline-warning ms-1"
                       onClick={() => {
@@ -192,6 +197,8 @@ const HomePage = () => {
                     >
                       ADD TO CART
                     </button>
+
+
                   </div>
                 </div>
               </div>

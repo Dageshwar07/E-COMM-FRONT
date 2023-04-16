@@ -2,12 +2,19 @@ import React, { useState, useEffect } from "react";
 import Layout from "./../components/Layout/Layout";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { useCart } from "../context/cart";
+
+
+
 import "../styles/ProductDetailsStyles.css";
 
 const ProductDetails = () => {
   const params = useParams();
   const navigate = useNavigate();
+  const [cart, setCart] = useCart();
   const [product, setProduct] = useState({});
+  const [products, setProducts] = useState([]);
   const [relatedProducts, setRelatedProducts] = useState([]);
 
   //initalp details
@@ -18,7 +25,7 @@ const ProductDetails = () => {
   const getProduct = async () => {
     try {
       const { data } = await axios.get(
-        `/api/v1/product/get-product/${params.slug}`
+        `https://e-comm-back.onrender.com/api/v1/product/get-product/${params.slug}`
       );
       setProduct(data?.product);
       getSimilarProduct(data?.product._id, data?.product.category._id);
@@ -30,7 +37,7 @@ const ProductDetails = () => {
   const getSimilarProduct = async (pid, cid) => {
     try {
       const { data } = await axios.get(
-        `/api/v1/product/related-product/${pid}/${cid}`
+        `https://e-comm-back.onrender.com/api/v1/product/related-product/${pid}/${cid}`
       );
       setRelatedProducts(data?.products);
     } catch (error) {
@@ -40,15 +47,19 @@ const ProductDetails = () => {
   return (
     <Layout>
       <div className="row container product-details">
+
+
         <div className="col-md-6">
           <img
-            src={`/api/v1/product/product-photo/${product._id}`}
+            src={`https://e-comm-back.onrender.com/api/v1/product/product-photo/${product._id}`}
             className="card-img-top"
             alt={product.name}
             height="300"
             width={"350px"}
           />
         </div>
+
+
         <div className="col-md-6 product-details-info">
           <h1 className="text-center">Product Details</h1>
           <hr />
@@ -62,10 +73,33 @@ const ProductDetails = () => {
             })}
           </h6>
           <h6>Category : {product?.category?.name}</h6>
-          <button class="btn btn-secondary ms-1">ADD TO CART</button>
+
+
+
+          <button
+            className="btn btn-outline-warning ms-1"
+            onClick={() => {
+              setCart([...cart, product]);
+              localStorage.setItem(
+                "cart",
+                JSON.stringify([...cart, product])
+              );
+              toast.success("Item Added to cart");
+            }}
+          >
+            ADD TO CART
+
+          </button>
+
+
         </div>
+
+
       </div>
+
       <hr />
+
+
       <div className="row container similar-products">
         <h4>Similar Products ➡️</h4>
         {relatedProducts.length < 1 && (
@@ -75,7 +109,7 @@ const ProductDetails = () => {
           {relatedProducts?.map((p) => (
             <div className="card m-2" key={p._id}>
               <img
-                src={`/api/v1/product/product-photo/${p._id}`}
+                src={`https://e-comm-back.onrender.com/api/v1/product/product-photo/${p._id}`}
                 className="card-img-top"
                 alt={p.name}
               />
@@ -94,7 +128,7 @@ const ProductDetails = () => {
                 </p>
                 <div className="card-name-price">
                   <button
-                    className="btn btn-info ms-1"
+                    className="btn btn-outline-info ms-1"
                     onClick={() => navigate(`/product/${p.slug}`)}
                   >
                     More Details
