@@ -17,7 +17,7 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("/api/v1/auth/register", {
+      const res = await axios.post("https://e-comm-back.onrender.com/api/v1/auth/register", {
         name,
         email,
         password,
