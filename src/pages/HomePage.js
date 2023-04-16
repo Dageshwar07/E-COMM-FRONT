@@ -174,13 +174,13 @@ const HomePage = () => {
                   </p>
                   <div className="card-name-price">
                     <button
-                      className="btn btn-info ms-1"
+                      className="btn btn-outline-primary ms-1"
                       onClick={() => navigate(`/product/${p.slug}`)}
                     >
                       More Details
                     </button>
                     <button
-                      className="btn btn-dark ms-1"
+                      className="btn btn-outline-warning ms-1"
                       onClick={() => {
                         setCart([...cart, p]);
                         localStorage.setItem(
