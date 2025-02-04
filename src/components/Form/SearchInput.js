@@ -2,6 +2,7 @@ import React from "react";
 import { useSearch } from "../../context/search";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import apiUrl from "../../api/api";
 const SearchInput = () => {
   const [values, setValues] = useSearch();
   const navigate = useNavigate();
@@ -10,7 +11,8 @@ const SearchInput = () => {
     e.preventDefault();
     try {
       const { data } = await axios.get(
-        `https://e-comm-back.onrender.com/api/v1/product/search/${values.keyword}`
+        `${apiUrl
+        }/api/v1/product/search/${values.keyword}`
       );
       setValues({ ...values, results: data });
       navigate("/search");

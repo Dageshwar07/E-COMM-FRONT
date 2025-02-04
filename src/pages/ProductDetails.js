@@ -8,6 +8,7 @@ import { useCart } from "../context/cart";
 
 
 import "../styles/ProductDetailsStyles.css";
+import apiUrl from "../api/api";
 
 const ProductDetails = () => {
   const params = useParams();
@@ -25,7 +26,7 @@ const ProductDetails = () => {
   const getProduct = async () => {
     try {
       const { data } = await axios.get(
-        `https://e-comm-back.onrender.com/api/v1/product/get-product/${params.slug}`
+        `${apiUrl}/api/v1/product/get-product/${params.slug}`
       );
       setProduct(data?.product);
       getSimilarProduct(data?.product._id, data?.product.category._id);
@@ -37,7 +38,7 @@ const ProductDetails = () => {
   const getSimilarProduct = async (pid, cid) => {
     try {
       const { data } = await axios.get(
-        `https://e-comm-back.onrender.com/api/v1/product/related-product/${pid}/${cid}`
+        `${apiUrl}/api/v1/product/related-product/${pid}/${cid}`
       );
       setRelatedProducts(data?.products);
     } catch (error) {
@@ -51,7 +52,7 @@ const ProductDetails = () => {
 
         <div className="col-md-6">
           <img
-            src={`https://e-comm-back.onrender.com/api/v1/product/product-photo/${product._id}`}
+            src={`${apiUrl}/api/v1/product/product-photo/${product._id}`}
             className="card-img-top"
             alt={product.name}
             height="300"
@@ -109,7 +110,7 @@ const ProductDetails = () => {
           {relatedProducts?.map((p) => (
             <div className="card m-2" key={p._id}>
               <img
-                src={`https://e-comm-back.onrender.com/api/v1/product/product-photo/${p._id}`}
+                src={`${apiUrl}/api/v1/product/product-photo/${p._id}`}
                 className="card-img-top"
                 alt={p.name}
               />

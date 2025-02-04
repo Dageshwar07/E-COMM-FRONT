@@ -5,6 +5,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import "../../styles/Homepage.css";
+import apiUrl from "../../api/api";
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -12,7 +13,7 @@ const Products = () => {
   //getall products
   const getAllProducts = async () => {
     try {
-      const { data } = await axios.get("https://e-comm-back.onrender.com/api/v1/product/get-product");
+      const { data } = await axios.get(`${apiUrl}/api/v1/product/get-product`);
       setProducts(data.products);
     } catch (error) {
       console.log(error);
@@ -42,7 +43,7 @@ const Products = () => {
 
                 <div className="card m-4" key={p._id}>
                   <img
-                    src={`https://e-comm-back.onrender.com/api/v1/product/product-photo/${p._id}`}
+                    src={`${apiUrl}/api/v1/product/product-photo/${p._id}`}
                     className="card-img-top"
                     alt={p.name}
                   />

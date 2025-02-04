@@ -1,0 +1,68 @@
+name: Deploy Node Application
+
+on:
+  push:
+    branches:
+      - mern-ec2-docker  # Trigger pipeline on push to the `mern-ec2-docker` branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4  # Checkout your repository
+
+      - name: Login to Docker Hub
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}  # Login to Docker Hub
+
+      # Build the Frontend Docker Image
+      - name: Build Frontend Docker Image
+        run: |
+          docker build -t dageshwar07/ecommerce-frontend:latest \
+            --build-arg REACT_APP_NODE_ENV='production' \
+            --build-arg REACT_APP_SERVER_BASE_URL='${{ secrets.REACT_APP_SERVER_BASE_URL }}' \
+            ./frontend  # Path to your frontend directory (adjust if needed)
+
+      # Build the Backend Docker Image
+      - name: Build Backend Docker Image
+        run: |
+          docker build -t dageshwar07/ecommerce-backend:latest \
+            --build-arg NODE_ENV='production' \
+            --build-arg DB_CONNECTION_STRING='${{ secrets.DB_CONNECTION_STRING }}' \
+            ./backend  # Path to your backend directory (adjust if needed)
+
+      # Publish Frontend Docker Image to Docker Hub
+      - name: Publish Frontend Docker Image
+        run: docker push dageshwar07/ecommerce-frontend:latest
+
+      # Publish Backend Docker Image to Docker Hub
+      - name: Publish Backend Docker Image
+        run: docker push dageshwar07/ecommerce-backend:latest
+
+  deploy:
+    needs: build
+    runs-on: self-hosted  # The server where Docker is installed (self-hosted runner)
+    steps:
+      # Pull Frontend Docker Image from Docker Hub
+      - name: Pull Frontend Image from Docker Hub
+        run: docker pull dageshwar07/ecommerce-frontend:latest
+
+      # Pull Backend Docker Image from Docker Hub
+      - name: Pull Backend Image from Docker Hub
+        run: docker pull dageshwar07/ecommerce-backend:latest
+
+      # Delete Old Frontend Container (if exists)
+      - name: Delete Old Frontend Container (if exists)
+        run: docker rm -f ecommerce-frontend || true
+
+      # Delete Old Backend Container (if exists)
+      - name: Delete Old Backend Container (if exists)
+        run: docker rm -f ecommerce-backend || true
+
+      # Run the Frontend Docker Container
+      - name: Run Frontend Docker Container
+        run: docker run -d -p 3000:80 --name ecommerce-frontend dageshwar07/ecommerce-frontend:latest
+
+      # Run the Backend Docker Container
+      - name: Run Backend Docker Container
+        run: docker run -d -p 5000:80 --name ecommerce-backend dageshwar07/ecommerce-backend:latest
