@@ -3,7 +3,8 @@ name: Deploy React Frontend
 on:
   push:
     branches:
-      - [main ,master]  # Jab bhi main branch pe push hoga, workflow trigger hoga
+      - main
+      - master  # Trigger only on main or master branch
 
 jobs:
   deploy:
@@ -24,18 +25,30 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build --build-arg REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }} -t react-app .
-          docker tag react-app ${{ secrets.DOCKER_USERNAME }}/react-app:latest
+          docker build --build-arg REACT_APP_API_URL=${{ secrets.REACT_APP_API_DEV_URL }} -t ${{ secrets.DOCKER_USERNAME }}/react-app:latest .
           docker push ${{ secrets.DOCKER_USERNAME }}/react-app:latest
 
-      - name: SSH into EC2 and Deploy
+      - name: Deploy on EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.AWS_HOST }}
           username: ubuntu
           key: ${{ secrets.AWS_PRIVATE_KEY }}
           script: |
+            # Pull latest image
             docker pull ${{ secrets.DOCKER_USERNAME }}/react-app:latest
+
+            # Stop and remove old container if exists
             docker stop react-app || true
             docker rm react-app || true
-            docker run -d -p 80:80 --name react-app ${{ secrets.DOCKER_USERNAME }}/react-app:latest
+
+            # Remove old unused images
+            docker image prune -f
+
+            # Run new container with correct port mapping
+            docker run -d \
+              -p 80:80 \  # Change to -p 3000:3000 if your app runs on 3000 inside the container
+              --name react-app \
+              --restart always \
+              -e REACT_APP_API_URL=${{ secrets.REACT_APP_API_DEV_URL }} \
+              ${{ secrets.DOCKER_USERNAME }}/react-app:latest
