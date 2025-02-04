@@ -1,31 +1,35 @@
-# Stage 1: Build Stage
-FROM node:18-alpine AS build
+# Step 1: Build Stage
+FROM node:18-alpine AS builder
 
-# Set working directory inside the container
 WORKDIR /app
 
+# Copy package.json and package-lock.json
+COPY package*.json ./
+
+# Copy .env file (for environment variables)
+COPY .env .env
+
 # Install dependencies
-COPY package.json package-lock.json ./
 RUN npm install
 
-# Copy the rest of the frontend source code
+# Copy the rest of the app
 COPY . .
 
-# Set the environment variable (this will be used by Create React App to build with the given API URL)
-ARG REACT_APP_API_DEV_URL
-ENV REACT_APP_API_DEV_URL=${REACT_APP_API_DEV_URL}
+# Set environment variable during build
+ARG REACT_APP_API_URL
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
 
-# Build the React app for production
+# Build the React app
 RUN npm run build
 
-# Stage 2: Serve Stage (using a lightweight web server)
+# Step 2: Production Stage
 FROM nginx:alpine
 
-# Copy the build files from the first stage to the Nginx server directory
-COPY --from=build /app/build /usr/share/nginx/html
+# Copy built files from builder stage to Nginx public directory
+COPY --from=builder /app/build /usr/share/nginx/html
 
-# Expose the port the app will be served on
-EXPOSE 3000
+# Expose port 80
+EXPOSE 80
 
-# Start Nginx
+# Start Nginx server
 CMD ["nginx", "-g", "daemon off;"]

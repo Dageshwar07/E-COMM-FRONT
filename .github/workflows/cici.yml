@@ -1,68 +1,41 @@
-name: Deploy Node Application
+name: Deploy React Frontend
 
 on:
   push:
     branches:
-      - mern-ec2-docker  # Trigger pipeline on push to the `mern-ec2-docker` branch
+      - [main ,master]  # Jab bhi main branch pe push hoga, workflow trigger hoga
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Source
-        uses: actions/checkout@v4  # Checkout your repository
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
-        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}  # Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Build the Frontend Docker Image
-      - name: Build Frontend Docker Image
+      - name: Build and Push Docker Image
         run: |
-          docker build -t dageshwar07/ecommerce-frontend:latest \
-            --build-arg REACT_APP_NODE_ENV='production' \
-            --build-arg REACT_APP_SERVER_BASE_URL='${{ secrets.REACT_APP_SERVER_BASE_URL }}' \
-            ./frontend  # Path to your frontend directory (adjust if needed)
+          docker build --build-arg REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }} -t react-app .
+          docker tag react-app ${{ secrets.DOCKER_USERNAME }}/react-app:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/react-app:latest
 
-      # Build the Backend Docker Image
-      - name: Build Backend Docker Image
-        run: |
-          docker build -t dageshwar07/ecommerce-backend:latest \
-            --build-arg NODE_ENV='production' \
-            --build-arg DB_CONNECTION_STRING='${{ secrets.DB_CONNECTION_STRING }}' \
-            ./backend  # Path to your backend directory (adjust if needed)
-
-      # Publish Frontend Docker Image to Docker Hub
-      - name: Publish Frontend Docker Image
-        run: docker push dageshwar07/ecommerce-frontend:latest
-
-      # Publish Backend Docker Image to Docker Hub
-      - name: Publish Backend Docker Image
-        run: docker push dageshwar07/ecommerce-backend:latest
-
-  deploy:
-    needs: build
-    runs-on: self-hosted  # The server where Docker is installed (self-hosted runner)
-    steps:
-      # Pull Frontend Docker Image from Docker Hub
-      - name: Pull Frontend Image from Docker Hub
-        run: docker pull dageshwar07/ecommerce-frontend:latest
-
-      # Pull Backend Docker Image from Docker Hub
-      - name: Pull Backend Image from Docker Hub
-        run: docker pull dageshwar07/ecommerce-backend:latest
-
-      # Delete Old Frontend Container (if exists)
-      - name: Delete Old Frontend Container (if exists)
-        run: docker rm -f ecommerce-frontend || true
-
-      # Delete Old Backend Container (if exists)
-      - name: Delete Old Backend Container (if exists)
-        run: docker rm -f ecommerce-backend || true
-
-      # Run the Frontend Docker Container
-      - name: Run Frontend Docker Container
-        run: docker run -d -p 3000:80 --name ecommerce-frontend dageshwar07/ecommerce-frontend:latest
-
-      # Run the Backend Docker Container
-      - name: Run Backend Docker Container
-        run: docker run -d -p 5000:80 --name ecommerce-backend dageshwar07/ecommerce-backend:latest
+      - name: SSH into EC2 and Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ubuntu
+          key: ${{ secrets.AWS_PRIVATE_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKER_USERNAME }}/react-app:latest
+            docker stop react-app || true
+            docker rm react-app || true
+            docker run -d -p 80:80 --name react-app ${{ secrets.DOCKER_USERNAME }}/react-app:latest
