@@ -3,7 +3,8 @@ name: Deploy React Frontend
 on:
   push:
     branches:
-      - master  
+      - master
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -26,26 +27,32 @@ jobs:
           docker build --build-arg REACT_APP_API_URL=${{ secrets.REACT_APP_API_DEV_URL }} -t ${{ secrets.DOCKER_USERNAME }}/react-app:latest .
           docker push ${{ secrets.DOCKER_USERNAME }}/react-app:latest
 
+      - name: Test SSH Connection to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ubuntu
+          key: ${{ secrets.AWS_PRIVATE_KEY }}
+          port: 22
+          script: echo "✅ SSH connection successful."
+
       - name: Deploy on EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.AWS_HOST }}
           username: ubuntu
           key: ${{ secrets.AWS_PRIVATE_KEY }}
+          port: 22
           script: |
-            # Pull latest image
             docker pull ${{ secrets.DOCKER_USERNAME }}/react-app:latest
 
-            # Stop and remove old container if exists
             docker stop react-app || true
             docker rm react-app || true
 
-            # Remove old unused images
             docker image prune -f
 
-            # Run new container with correct port mapping
             docker run -d \
-              -p 80:80 \  # Change to -p 3000:3000 if your app runs on 3000 inside the container
+              -p 80:80 \
               --name react-app \
               --restart always \
               -e REACT_APP_API_URL=${{ secrets.REACT_APP_API_DEV_URL }} \
