@@ -3,11 +3,8 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package.json and package-lock.json
+# Copy only necessary files
 COPY package*.json ./
-
-# Copy .env file (for environment variables)
-COPY .env .env
 
 # Install dependencies
 RUN npm install
@@ -15,7 +12,7 @@ RUN npm install
 # Copy the rest of the app
 COPY . .
 
-# Set environment variable during build
+# Accept build-time environment variable
 ARG REACT_APP_API_URL
 ENV REACT_APP_API_URL=$REACT_APP_API_URL
 
@@ -25,11 +22,11 @@ RUN npm run build
 # Step 2: Production Stage
 FROM nginx:alpine
 
-# Copy built files from builder stage to Nginx public directory
+# Copy built files to Nginx
 COPY --from=builder /app/build /usr/share/nginx/html
 
 # Expose port 80
 EXPOSE 80
 
-# Start Nginx server
+# Start Nginx
 CMD ["nginx", "-g", "daemon off;"]
